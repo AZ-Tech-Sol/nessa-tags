@@ -220,7 +220,7 @@
   <div class="wrap">
     <div class="order">
       <h2>Start an order</h2>
-      <p>Tell Nessa what you want, then send it to her on Instagram and she&rsquo;ll come back to you to sort out the details. Nothing is paid here &mdash; you settle up in person when you meet.</p>
+      <p>Tell Nessa what you want. We&rsquo;ll write it up as a message you can send her on Instagram or by text, and she&rsquo;ll come back to you to sort out the details. Nothing is paid here &mdash; you settle up in person when you meet.</p>
       <form id="orderform" novalidate>
         <div class="row2">
           <input type="text" id="oname" placeholder="Your name" aria-label="Your name" autocomplete="name" required>
@@ -248,12 +248,18 @@
         </div>
         <input type="url" id="olink" placeholder="The link it should open (your Instagram, TikTok…)" aria-label="The link the tag should open">
         <textarea id="onote" rows="3" placeholder="Colours, shapes, the vibe you're after…" aria-label="What you would like"></textarea>
-        <button type="submit">Send it to Nessa on Instagram ✦</button>
+        <button type="submit">Get my message ready ✦</button>
       </form>
       <div class="done">
-        <b>Your order is copied.</b>
-        Thanks <span id="sentname">—</span>. Instagram is opening a message to @lochnessaaz: paste it in and send. If it didn't open, <a id="dmlink" href="https://ig.me/m/lochnessaaz" target="_blank" rel="noopener">tap here to message Nessa</a>. Nothing is owed until you agree the details.
-        <textarea id="ordertext" rows="6" readonly aria-label="Your order, ready to paste"></textarea>
+        <b>Your message is ready, <span id="sentname">—</span>.</b>
+        <p class="steps2">Send it to Nessa one of two ways. Nothing is owed until you agree the details.</p>
+        <textarea id="ordertext" rows="7" readonly aria-label="Your order message"></textarea>
+        <div class="sendrow">
+          <button type="button" class="btn btn-glow" id="sendig">Copy &amp; open Instagram</button>
+          <a class="btn btn-ghost" id="sendsms" href="sms:+15209122199">Send as a text</a>
+        </div>
+        <p class="fine how" id="ighow">On Instagram: the message is copied for you. When the chat opens, tap the message box, choose <strong class="inl">Paste</strong>, and send.</p>
+        <p class="fine"><button type="button" class="linkbtn" id="copyonly">Just copy the message</button> <span id="copied" aria-live="polite"></span> · <button type="button" class="linkbtn" id="editorder">Change something</button></p>
       </div>
       <p class="or">or simply &mdash; <a href="https://www.instagram.com/lochnessaaz" rel="noopener" target="_blank">message @lochnessaaz on Instagram</a></p>
     </div>
@@ -277,29 +283,45 @@
 </footer>
 
 <script>
-/* The order is composed here, copied, and sent by the customer as an Instagram DM. No server, no email. */
-document.getElementById('orderform').addEventListener('submit', function (e) {
-  e.preventDefault();
-  var v = function (id) { return document.getElementById(id).value.trim(); };
-  var name = document.getElementById('oname'), email = document.getElementById('oemail'), bad = false;
-  [name, email].forEach(function (f) { f.style.borderColor = ''; if (!f.value.trim()) { f.style.borderColor = '#ff6b9d'; bad = true; } });
-  if (bad) return;
-  var lines = ['Hi Nessa! I\'d like to order tags.', 'Name: ' + v('oname')];
-  if (v('ohandle')) lines.push('Instagram: ' + v('ohandle'));
-  lines.push('Email: ' + v('oemail'));
-  if (v('ophone')) lines.push('Phone: ' + v('ophone'));
-  if (v('okind')) lines.push('Kind: ' + v('okind'));
-  if (v('osize')) lines.push('How many: ' + v('osize'));
-  if (v('olink')) lines.push('Tag should open: ' + v('olink'));
-  if (v('onote')) lines.push('Notes: ' + v('onote'));
-  var msg = lines.join('\n');
-  document.getElementById('ordertext').value = msg;
-  document.getElementById('sentname').textContent = v('oname');
-  document.querySelector('.order').classList.add('sent');
-  try { navigator.clipboard && navigator.clipboard.writeText(msg); } catch (x) {}
-  if (window.umami) umami.track('order-dm', { kind: v('okind') || 'unsure', size: v('osize') || 'unsure' });
-  window.open('https://ig.me/m/lochnessaaz', '_blank', 'noopener');
-});
+/* The order is composed here and shown first. The customer then chooses: copy and open Instagram, or a text with the
+   whole message already typed. Nothing opens on its own. No server, no email. */
+(function () {
+  var NUM = '+15209122199', IG = 'https://ig.me/m/lochnessaaz', msg = '';
+  var $ = function (id) { return document.getElementById(id); };
+  var v = function (id) { return $(id).value.trim(); };
+  var track = function (n, d) { try { if (window.umami) umami.track(n, d); } catch (x) {} };
+  var copy = function () {
+    var ok = false;
+    try { if (navigator.clipboard) { navigator.clipboard.writeText(msg); ok = true; } } catch (x) {}
+    if (!ok) { var ta = $('ordertext'); ta.focus(); ta.select(); try { ok = document.execCommand('copy'); } catch (x) {} }
+    $('copied').textContent = 'Copied ✓';
+    return ok;
+  };
+  $('orderform').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var name = $('oname'), email = $('oemail'), bad = false;
+    [name, email].forEach(function (f) { f.style.borderColor = ''; if (!f.value.trim()) { f.style.borderColor = '#ff6b9d'; bad = true; } });
+    if (bad) return;
+    var lines = ['Hi Nessa! I\'d like to order tags.', 'Name: ' + v('oname')];
+    if (v('ohandle')) lines.push('Instagram: ' + v('ohandle'));
+    lines.push('Email: ' + v('oemail'));
+    if (v('ophone')) lines.push('Phone: ' + v('ophone'));
+    if (v('okind')) lines.push('Kind: ' + v('okind'));
+    if (v('osize')) lines.push('How many: ' + v('osize'));
+    if (v('olink')) lines.push('Tag should open: ' + v('olink'));
+    if (v('onote')) lines.push('Notes: ' + v('onote'));
+    msg = lines.join('\n');
+    $('ordertext').value = msg; $('sentname').textContent = v('oname'); $('copied').textContent = '';
+    $('sendsms').href = 'sms:' + NUM + '?&body=' + encodeURIComponent(msg);
+    document.querySelector('.order').classList.add('sent');
+    $('ordertext').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    track('order-ready', { kind: v('okind') || 'unsure', size: v('osize') || 'unsure' });
+  });
+  $('sendig').addEventListener('click', function () { copy(); track('order-dm', { via: 'instagram' }); window.open(IG, '_blank', 'noopener'); });
+  $('sendsms').addEventListener('click', function () { track('order-dm', { via: 'text' }); });
+  $('copyonly').addEventListener('click', copy);
+  $('editorder').addEventListener('click', function () { document.querySelector('.order').classList.remove('sent'); });
+})();
 </script>
 <script>
 /* Analytics: self-hosted Umami. ?notme=1 stops counting this browser, ?countme=1 undoes it.
